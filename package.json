@@ -1,6 +1,6 @@
 {
   "name": "htmon-test",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "htmon allows to generate cascading HTML code templates based on a JSON type element",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
