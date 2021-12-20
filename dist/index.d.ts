@@ -8,7 +8,7 @@ export interface TemplateBehaviorProperties<T = TemplateBehavior.BehaviorOptionL
     options: T;
 }
 declare class Behavior {
-    readonly behaviorList: Partial<TemplateBehavior.BehaviorList>;
+    get behaviorList(): Partial<TemplateBehavior.BehaviorList>;
     private BEHAVIORLIST;
     use<T = TemplateBehavior.BehaviorOptionList[keyof TemplateBehavior.BehaviorOptionList]>(name: string, behavior: TemplateBehaviorClass<T>): void;
 }
@@ -30,16 +30,16 @@ export declare class TemplateOperators {
     private static checkObject;
 }
 declare class TemplateTree {
-    readonly tree: IntersectionTypeList['template'][];
+    get tree(): IntersectionTypeList['template'][];
     private TREE;
-    readonly branch: Subject<IntersectionTypeList['template']>;
+    get branch(): Subject<IntersectionTypeList['template']>;
     private BRANCH;
     add(branch: IntersectionTypeList['template']): number;
     remove(branch: IntersectionTypeList['template']): void;
 }
 export declare const TemplateOptions: TemplateTree;
 export interface TemplateFamily {
-    parent: ContainerTemplate | Element;
+    parent: SomeContainerTemplateTypeList['template'] | Element;
     target: Element;
 }
 export interface DOMChangedEvent<T extends IntersectionTypeList['template'] = IntersectionTypeList['template']> {
@@ -97,18 +97,18 @@ export interface TemplateProperties extends TemplateFamily {
     readonly isDestroyed: boolean;
     readonly root: TemplateTree;
     readonly rowIndex: number;
+    styles: Readonly<Omit<TemplateContext['styles'], keyof ImportantStyles>>;
     closingStyles: Readonly<TemplateContext['closingStyles']>;
-    duration: Exclude<TemplateContext['duration'], string>;
     dataContext: Readonly<TemplateContext['dataContext']>;
     properties: Readonly<TemplateContext['dataContext']>;
     attributes: Readonly<TemplateContext['attributes']>;
-    styles: Readonly<Partial<CSSStyleDeclaration>>;
+    duration: Exclude<TemplateContext['duration'], string>;
     addClasses: TemplateContext['addClasses'];
     callback: TemplateContext['callback'];
     classes: TemplateContext['classes'];
     name: TemplateContext['name'];
     id: TemplateContext['id'];
-    loadTemplate: (context: Partial<TemplateContext>, restrict: string[]) => void;
+    loadTemplate: (context: Partial<IntersectionTypeList['context']>, restrict: string[]) => void;
     addMethods: (methodName: string, methodFn: (...params: any[]) => any) => void;
     addEvents: (events: [keyof HTMLElementEventMap | string, Callback][]) => void;
     reload: () => IntersectionTypeList['template'];
@@ -140,51 +140,58 @@ export interface GetTemplateEvent {
 }
 export declare class Template<T extends TemplateProperties = TemplateProperties, RT extends TemplateContext = TemplateContext> implements TemplateProperties {
     /** Retorna la información almacenada en las propiedades "properties", "dataContext" y "methods" de la plantilla */
-    readonly propertyList: T['propertyList'];
+    get propertyList(): T['propertyList'];
     /** Retorna la información almacenada en las propiedad "properties", "dataContext" y "methods" de la plantilla y de su arbol de padres */
-    readonly propertyTree: T['propertyTree'];
-    readonly parentTree: T['parentTree'];
-    readonly parent: T['parent'];
-    readonly target: T['target'];
-    readonly rowIndex: T['rowIndex'];
+    get propertyTree(): T['propertyTree'];
+    get parentTree(): T['parentTree'];
+    get parent(): T['parent'];
+    get target(): T['target'];
+    get rowIndex(): T['rowIndex'];
     protected ROWINDEX: T['rowIndex'];
-    readonly root: T['root'];
+    get root(): T['root'];
     protected ROOT: T['root'];
-    readonly isDestroyed: T['isDestroyed'];
+    get isDestroyed(): T['isDestroyed'];
     protected ISDESTROYED: T['isDestroyed'];
-    readonly templateContainer: T['templateContainer'];
+    get templateContainer(): T['templateContainer'];
     protected TEMPLATECONTAINER: T['templateContainer'];
-    readonly componentAttribute: T['componentAttribute'];
+    get componentAttribute(): T['componentAttribute'];
     protected COMPONENTATTRIBUTE: T['componentAttribute'];
-    readonly methods: T['methods'];
+    get methods(): T['methods'];
     protected METHODS: T['methods'];
-    readonly templateContext: T['templateContext'];
+    get templateContext(): T['templateContext'];
     protected TEMPLATECONTEXT: T['templateContext'];
-    readonly templateDataContext: T['templateDataContext'];
+    get templateDataContext(): T['templateDataContext'];
     protected TEMPLATEDATACONTEXT: T['templateDataContext'];
-    readonly type: T['type'];
+    get type(): T['type'];
     protected TYPE: T['type'];
-    readonly behaviorInstances: T['behaviorInstances'];
+    get behaviorInstances(): T['behaviorInstances'];
     protected BEHAVIORINSTANCES: T['behaviorInstances'];
-    readonly events: T['events'];
+    get events(): T['events'];
     protected TEMPLATEEVENTS: TemplateEvents;
-    addClasses: T['addClasses'];
-    classes: T['classes'];
-    attributes: T['attributes'];
-    callback: T['callback'];
-    protected behavior: RT['behavior'];
+    set addClasses(val: T['addClasses']);
+    set classes(val: T['classes']);
+    set attributes(val: T['attributes']);
+    set callback(val: T['callback']);
+    protected set behavior(val: RT['behavior']);
     protected DATACONTEXT: T['dataContext'];
-    dataContext: T['dataContext'];
+    get dataContext(): T['dataContext'];
+    set dataContext(val: T['dataContext']);
     protected PROPERTIES: T['properties'];
-    properties: T['properties'];
+    get properties(): T['properties'];
+    set properties(val: T['properties']);
     protected NAME: T['name'];
-    name: T['name'];
+    get name(): T['name'];
+    set name(val: T['name']);
     protected CLOSINGSTYLES: T['closingStyles'];
-    closingStyles: T['closingStyles'];
+    get closingStyles(): T['closingStyles'];
+    set closingStyles(val: T['closingStyles']);
     private DURATION;
-    duration: T['duration'];
-    id: T['id'];
-    styles: T['styles'];
+    get duration(): T['duration'];
+    set duration(val: T['duration']);
+    get id(): T['id'];
+    set id(val: T['id']);
+    set styles(val: T['styles']);
+    get styles(): T['styles'];
     constructor(parent: T['parent'], templateContext: T['templateContext'], methods: T['methods'], tag: RT['tag'], componentAttribute: T['componentAttribute'], rowIndex?: T['rowIndex'], templateContainer?: Partial<T['templateContainer']>, type?: T['type']);
     /**
      * Añade métodos al listado
@@ -193,7 +200,7 @@ export declare class Template<T extends TemplateProperties = TemplateProperties,
      */
     addMethods(methodName: string, methodFn: (...params: any[]) => any): void;
     addEvents(events: RT['addEvents']): void;
-    loadTemplate(context: Partial<TemplateContext>, restrict?: string[]): void;
+    loadTemplate(context: Partial<IntersectionTypeList['context']>, restrict?: string[]): void;
     reload(): this;
     /**
      * Actualiza la propiedad ROWINDEX de acuerdo a la posición del contexto en la propiedad ROWS de la plantilla padre
@@ -240,7 +247,6 @@ export interface ContainerTemplateProperties extends TemplateProperties {
     push: <T extends IntersectionTypeList['template']>(template: T | T['templateContext'], replace?: boolean, index?: number) => T;
     appendChild: <T extends IntersectionTypeList['template']>(child: T['templateContext'], methods?: T['methods']) => T;
     childrenContextTree: (rowList: ContainerTemplateProperties['rows']) => ContainerTemplateProperties['rows'];
-    loadTemplate: (context: Partial<ContainerTemplateContext>, restrict: string[]) => void;
     destroyChildren: (children: IntersectionTypeList['template'][]) => Promise<void>;
 }
 export interface ContainerTemplateContext extends TemplateContext {
@@ -249,18 +255,21 @@ export interface ContainerTemplateContext extends TemplateContext {
 }
 export declare class ContainerTemplate<P extends ContainerTemplateProperties = ContainerTemplateProperties, C extends ContainerTemplateContext = ContainerTemplateContext> extends Template<P, C> implements ContainerTemplateProperties {
     /** Retorna la información almacenada en las propiedad "properties", "dataContext" y "methods" de la plantilla, de su arbol de padres y de su arbol de hijos */
-    readonly propertyTree: P['propertyTree'];
-    readonly children: P['children'];
-    readonly childrenTree: P['childrenTree'];
-    readonly events: P['events'];
+    get propertyTree(): P['propertyTree'];
+    get children(): P['children'];
+    get childrenTree(): P['childrenTree'];
+    get events(): P['events'];
     protected CONTAINERTEMPLATEEVENTS: ContainerTemplateEvents;
     protected ROWS: P['rows'];
-    rows: P['rows'];
-    dataContext: P['dataContext'];
-    properties: P['properties'];
+    get rows(): P['rows'];
+    set rows(val: P['rows']);
+    get dataContext(): P['dataContext'];
+    set dataContext(val: P['dataContext']);
+    get properties(): P['properties'];
+    set properties(val: P['properties']);
     constructor(parent: P['parent'], templateContext: P['templateContext'], methods: P['methods'], tag: C['tag'], componentAttribute: P['componentAttribute'], rowIndex?: P['rowIndex'], templateContainer?: Partial<P['templateContainer']>, type?: P['type']);
     childrenContextTree(rowList?: P["rows"]): P['rows'];
-    loadTemplate(context: Partial<ContainerTemplateContext>, restrict?: string[]): void;
+    loadTemplate(context: Partial<SomeContainerTemplateTypeList['context']>, restrict?: string[]): void;
     /**
      * Añade un elemento a la plantilla
      * @param context Elemento a añadir: Plantilla o contexto de plantilla
@@ -269,8 +278,8 @@ export declare class ContainerTemplate<P extends ContainerTemplateProperties = C
      * @returns Elemento añadido
      */
     push<T extends IntersectionTypeList['template']>(context: T | T['templateContext'], replace?: boolean, index?: number): T;
-    appendChild: <T extends Template<TemplateProperties, TemplateContext> | ElementTemplate<ElementTemplateProperties, ElementTemplateContext> | ContainerTemplate<ContainerTemplateProperties, ContainerTemplateContext> | IterableTemplate<IterableTemplateProperties, IterableTemplateContext>>(child: T["templateContext"], methods?: Record<string, (...params: any[]) => any>) => T;
-    destroyChildren: (children?: (Template<TemplateProperties, TemplateContext> | ElementTemplate<ElementTemplateProperties, ElementTemplateContext> | ContainerTemplate<ContainerTemplateProperties, ContainerTemplateContext> | IterableTemplate<IterableTemplateProperties, IterableTemplateContext>)[]) => Promise<void>;
+    appendChild: <T extends Template<TemplateProperties, TemplateContext> | ElementTemplate<ElementTemplateProperties, ElementTemplateContext> | ContainerTemplate<ContainerTemplateProperties, ContainerTemplateContext> | IterableTemplate<IterableTemplateProperties, IterableTemplateContext>>(child: T["templateContext"], methods?: ContainerTemplate['methods']) => T;
+    destroyChildren: (children?: IntersectionTypeList['template'][]) => Promise<void>;
     destroy(): Promise<void>;
 }
 export interface ContainerTemplateTypeList {
@@ -310,7 +319,6 @@ export interface IterableTemplateProperties extends ContainerTemplateProperties 
     childrenLength: Exclude<IterableTemplateContext['childrenLength'], string>;
     childrenShown: Exclude<IterableTemplateContext['childrenShown'], string>;
     type: IterableTemplateContext['type'];
-    loadTemplate: (context: Partial<IterableTemplateContext>, restrict: string[]) => void;
 }
 export interface IterableTemplateContext extends ContainerTemplateContext {
     controller: Partial<IntersectionTypeList['context']>;
@@ -320,22 +328,28 @@ export interface IterableTemplateContext extends ContainerTemplateContext {
 }
 export declare class IterableTemplate<P extends IterableTemplateProperties = IterableTemplateProperties, C extends IterableTemplateContext = IterableTemplateContext> extends ContainerTemplate<P, C> implements IterableTemplateProperties {
     /** Retorna la información almacenada en las propiedad "properties", "dataContext" y "methods" de la plantilla, de su arbol de padres, de su arbol de hijos y el arbol del controlador */
-    readonly propertyTree: P['propertyTree'];
+    get propertyTree(): P['propertyTree'];
     /** Retorna el arbol de hijos, además del arbol del controlador */
-    readonly childrenTree: P['childrenTree'];
+    get childrenTree(): P['childrenTree'];
     /** Retorna la plantilla del controlador */
-    readonly controller: P['controller'];
-    readonly events: P['events'];
+    get controller(): P['controller'];
+    get events(): P['events'];
     protected ITERABLETEMPLATEEVENTS: IterableTemplateEvents;
-    dataContext: P['dataContext'];
-    properties: P['properties'];
+    get dataContext(): P['dataContext'];
+    set dataContext(val: P['dataContext']);
+    get properties(): P['properties'];
+    set properties(val: P['properties']);
     private CHILDRENSHOWNCHANGER;
-    childrenShownChanger: P['childrenShownChanger'];
-    rows: P['rows'];
+    get childrenShownChanger(): P['childrenShownChanger'];
+    set childrenShownChanger(val: P['childrenShownChanger']);
+    get rows(): P['rows'];
+    set rows(val: P['rows']);
     private CHILDRENLENGTH;
-    childrenLength: P['childrenLength'];
+    get childrenLength(): P['childrenLength'];
+    set childrenLength(val: P['childrenLength']);
     private CHILDRENSHOWN;
-    childrenShown: P['childrenShown'];
+    get childrenShown(): P['childrenShown'];
+    set childrenShown(val: P['childrenShown']);
     constructor(parent: P['parent'], templateContext: Partial<C>, methods: P['methods'], tag?: C['tag'], componentAttribute?: P['componentAttribute'], rowIndex?: P['rowIndex']);
     /**
      * Añade un elemento a la plantilla y actualiza los elementos mostrados
@@ -363,16 +377,15 @@ export interface ElementTemplateProperties extends TemplateProperties {
     readonly templateContext: Partial<ElementTemplateContext>;
     type: ElementTemplateContext['type'];
     text: ElementTemplateContext['text'];
-    loadTemplate: (context: Partial<ElementTemplateContext>, restrict: string[]) => void;
 }
 export interface ElementTemplateContext extends TemplateContext {
     type: 'element';
     text: string;
 }
 export declare class ElementTemplate<P extends ElementTemplateProperties = ElementTemplateProperties, C extends ElementTemplateContext = ElementTemplateContext> extends Template<P, C> implements ElementTemplateProperties {
-    text: P['text'];
+    get text(): P['text'];
+    set text(val: P['text']);
     constructor(parent: P['parent'], templateContext: Partial<C>, methods: P['methods'], tag?: C['tag'], componentAttribute?: P['componentAttribute'], rowIndex?: P['rowIndex']);
-    loadTemplate(context: Partial<ElementTemplateContext>, restrict?: string[]): void;
     destroy(): Promise<void>;
 }
 export interface TemplateTypeList {
@@ -395,9 +408,9 @@ export interface IterableControllerBehaviorOptions {
     target: string;
 }
 declare class IterableControllerBehavior {
-    template: Template;
+    template: IntersectionTypeList['template'];
     options: IterableControllerBehaviorOptions;
-    constructor(template: Template, options: IterableControllerBehaviorOptions);
+    constructor(template: IntersectionTypeList['template'], options: IterableControllerBehaviorOptions);
     init(): void;
     destroy: () => Promise<void>;
 }
@@ -408,9 +421,9 @@ export interface IterableTimerControllerBehaviorOptions {
     target: string;
 }
 declare class IterableTimerControllerBehavior {
-    template: Template;
+    template: IntersectionTypeList['template'];
     options: IterableTimerControllerBehaviorOptions;
-    constructor(template: Template, options: IterableTimerControllerBehaviorOptions);
+    constructor(template: IntersectionTypeList['template'], options: IterableTimerControllerBehaviorOptions);
     init(): void;
     destroy: () => Promise<void>;
 }
@@ -422,11 +435,16 @@ declare class IterableTimerViewerBehavior {
     template: IntersectionTypeList['template'];
     options: IterableTimerViewerBehaviorOptions;
     private TIMERCHANGER;
-    timerChanger: {
+    get timerChanger(): {
         timer: number;
         startAt: number;
         endAt: number;
     };
+    set timerChanger(val: {
+        timer: number;
+        startAt: number;
+        endAt: number;
+    });
     constructor(template: IntersectionTypeList['template'], options: IterableTimerViewerBehaviorOptions);
     init(): void;
     destroy: () => Promise<void>;

@@ -1,8 +1,9 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -115,13 +116,13 @@ export class TemplateOperators {
     static createTemplate(parent, templateContext, methods, componentAttribute, rowIndex = 0) {
         switch (templateContext.type) {
             case 'container':
-                return new ContainerTemplate(parent, templateContext, methods, templateContext ? templateContext.tag : undefined, componentAttribute, rowIndex, {}, 'container');
+                return new ContainerTemplate(parent, templateContext, methods, templateContext === null || templateContext === void 0 ? void 0 : templateContext.tag, componentAttribute, rowIndex, {}, 'container');
             case 'iterable':
                 return new IterableTemplate(parent, templateContext, methods, templateContext.tag, componentAttribute, rowIndex);
             case 'element':
                 return new ElementTemplate(parent, templateContext, methods, templateContext.tag, componentAttribute, rowIndex);
             default:
-                return new Template(parent, templateContext, methods, templateContext ? templateContext.tag : undefined, componentAttribute, rowIndex, {}, 'template');
+                return new Template(parent, templateContext, methods, templateContext === null || templateContext === void 0 ? void 0 : templateContext.tag, componentAttribute, rowIndex, {}, 'template');
         }
     }
     static getRows(children) {
@@ -147,7 +148,7 @@ class TemplateTree {
     get tree() { return this.TREE; }
     get branch() { return this.BRANCH; }
     add(branch) {
-        branch.events.ready.pipe(first((ref) => ref.template instanceof Template)).subscribe({ next: () => this.BRANCH.next(branch) });
+        branch.events.ready.pipe(first(ref => ref.template instanceof Template)).subscribe({ next: () => this.BRANCH.next(branch) });
         return this.TREE.push(branch);
     }
     remove(branch) {
@@ -159,6 +160,7 @@ export const TemplateOptions = new TemplateTree();
 export class Template {
     // CONSTRUCTOR
     constructor(parent, templateContext, methods, tag, componentAttribute, rowIndex = 0, templateContainer = {}, type = 'template') {
+        var _a;
         this.ISDESTROYED = false;
         this.TEMPLATECONTAINER = undefined;
         this.METHODS = {};
@@ -186,14 +188,14 @@ export class Template {
         'node' in templateContext && this.saveContext('node', templateContext.node, templateContext.node);
         'tag' in templateContext && this.saveContext('tag', templateContext.tag, templateContext.tag);
         const templateId = `node-${TemplateOptions.add(this)}`;
-        this.TEMPLATECONTAINER.target = (templateContext.node && templateContext.node.element) || document.createElement(tag || 'div');
+        this.TEMPLATECONTAINER.target = ((_a = templateContext.node) === null || _a === void 0 ? void 0 : _a.element) || document.createElement(tag || 'div');
         this.TEMPLATECONTAINER.target.id = this.TEMPLATECONTAINER.target.getAttribute('id') || templateContext.id || templateId;
         this.TEMPLATECONTAINER.parent = parent;
         this.saveContext('id', this.TEMPLATECONTAINER.target.id, this.TEMPLATECONTAINER.target.id);
         if (parent instanceof ContainerTemplate) {
             !Array.from(parent.target.children).includes(this.target) && parent.target.appendChild(this.TEMPLATECONTAINER.target);
             !componentAttribute ? componentAttribute = parent.componentAttribute : null;
-            methods = !methods ? parent.methods : Object.assign({}, parent.methods, methods);
+            methods = !methods ? parent.methods : Object.assign(Object.assign({}, parent.methods), methods);
             parent.children.push(this);
         }
         else if (parent instanceof Element) {
@@ -239,12 +241,12 @@ export class Template {
     }
     // READONLY
     /** Retorna la información almacenada en las propiedades "properties", "dataContext" y "methods" de la plantilla */
-    get propertyList() { return Object.assign({ templateRef: this }, this.properties, this.dataContext, { methods: this.METHODS }); }
+    get propertyList() { return Object.assign(Object.assign(Object.assign({ templateRef: this }, this.properties), this.dataContext), { methods: this.METHODS }); }
     /** Retorna la información almacenada en las propiedad "properties", "dataContext" y "methods" de la plantilla y de su arbol de padres */
     get propertyTree() {
         const properties = this.propertyList;
         if (this.parent instanceof ContainerTemplate) {
-            properties.getParentTree = () => this.parentTree.reduce((prop, parent) => (Object.assign({}, prop, { [parent.id]: parent.propertyTree })), {});
+            properties.getParentTree = () => this.parentTree.reduce((prop, parent) => (Object.assign(Object.assign({}, prop), { [parent.id]: parent.propertyTree })), {});
             properties.getParent = () => this.parent.propertyTree;
         }
         else {
@@ -297,10 +299,10 @@ export class Template {
     }
     set attributes(val) {
         if (!this.ISDESTROYED && this.target) {
-            const attributes = Object.assign({}, (this.TEMPLATECONTEXT.attributes || {}), val);
+            const attributes = Object.assign(Object.assign({}, (this.TEMPLATECONTEXT.attributes || {})), val);
             this.saveContext('attributes', attributes);
             const attributeList = TemplateOperators.interpolateVariableIf(val, this.propertyTree);
-            this.TEMPLATEDATACONTEXT.attributes = Object.assign({}, (this.TEMPLATEDATACONTEXT.attributes || {}), attributeList);
+            this.TEMPLATEDATACONTEXT.attributes = Object.assign(Object.assign({}, (this.TEMPLATEDATACONTEXT.attributes || {})), attributeList);
             Object.entries(attributeList).forEach(item => this.target.setAttribute(item[0], item[1]));
         }
     }
@@ -357,7 +359,7 @@ export class Template {
     get dataContext() { return this.ISDESTROYED === false ? this.DATACONTEXT : undefined; }
     set dataContext(val) {
         if (!this.ISDESTROYED) {
-            this.DATACONTEXT = Object.assign({}, this.DATACONTEXT, val);
+            this.DATACONTEXT = Object.assign(Object.assign({}, this.DATACONTEXT), val);
             this.saveContext('dataContext', this.DATACONTEXT, this.DATACONTEXT);
             this.events.propertyChanges.next();
         }
@@ -365,7 +367,7 @@ export class Template {
     get properties() { return this.ISDESTROYED === false ? this.PROPERTIES : undefined; }
     set properties(val) {
         if (!this.ISDESTROYED) {
-            this.PROPERTIES = Object.assign({}, this.PROPERTIES, val);
+            this.PROPERTIES = Object.assign(Object.assign({}, this.PROPERTIES), val);
             this.events.propertyChanges.next();
         }
     }
@@ -459,8 +461,21 @@ export class Template {
             if ('id' in context && (!restrict.includes('id')) && this.target) {
                 this.id = context.id;
             }
+            if ('text' in context && this.target && this instanceof ElementTemplate) {
+                this.text = context.text;
+            }
             if ('target' in context && this.target) {
                 this.setTarget(context.target);
+            }
+            if ('rows' in context && (!restrict.includes('rows')) && this instanceof ContainerTemplate) {
+                this.rows = context.rows;
+            }
+            if ('childrenShown' in context && (!restrict.includes('childrenShown')) && this instanceof IterableTemplate) {
+                this.childrenShown = context.childrenShown;
+            }
+            if ('controller' in context && this instanceof IterableTemplate) {
+                this.saveContext('controller', context.controller, context.controller);
+                this.controller && this.controller.loadTemplate(context.controller, []);
             }
             if ('duration' in context && (!restrict.includes('duration'))) {
                 this.setDuration(context.duration);
@@ -516,6 +531,7 @@ export class Template {
     }
     destroy() {
         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             if (!this.ISDESTROYED) {
                 this.events.destroy.next();
                 Object.values(this.TEMPLATEEVENTS).forEach(event => event.complete());
@@ -528,11 +544,11 @@ export class Template {
                             if (!this.ISDESTROYED) {
                                 this instanceof ContainerTemplate && (yield this.destroyChildren());
                                 if (!this.ISDESTROYED) {
-                                    if (this.TEMPLATECONTEXT.node && this.TEMPLATECONTEXT.node.element === this.target) {
-                                        this.TEMPLATECONTEXT.node.removable === true && this.target && this.target.remove();
+                                    if (((_a = this.TEMPLATECONTEXT.node) === null || _a === void 0 ? void 0 : _a.element) === this.target) {
+                                        this.TEMPLATECONTEXT.node.removable === true && ((_b = this.target) === null || _b === void 0 ? void 0 : _b.remove());
                                     }
                                     else {
-                                        this.target && this.target.remove();
+                                        (_c = this.target) === null || _c === void 0 ? void 0 : _c.remove();
                                     }
                                     this.ROOT.remove(this);
                                     TemplateOptions.remove(this);
@@ -666,9 +682,9 @@ export class Template {
     }
     setStyles(val, save = true) {
         if (!this.ISDESTROYED) {
-            save && this.saveContext('styles', Object.assign({}, (this.TEMPLATECONTEXT.styles || {}), val));
+            save && this.saveContext('styles', Object.assign(Object.assign({}, (this.TEMPLATECONTEXT.styles || {})), val));
             const styleList = TemplateOperators.interpolateVariableIf(val, this.propertyTree);
-            this.TEMPLATEDATACONTEXT.styles = Object.assign({}, (this.TEMPLATEDATACONTEXT.styles || {}), styleList);
+            this.TEMPLATEDATACONTEXT.styles = Object.assign(Object.assign({}, (this.TEMPLATEDATACONTEXT.styles || {})), styleList);
             const styles = Object.entries(styleList);
             styles.forEach(([key, value]) => {
                 if (key in this.styles) {
@@ -684,9 +700,9 @@ export class Template {
     }
     setTarget(val) {
         if (!this.ISDESTROYED) {
-            this.saveContext('target', Object.assign({}, (this.TEMPLATECONTEXT.target || {}), val));
+            this.saveContext('target', Object.assign(Object.assign({}, (this.TEMPLATECONTEXT.target || {})), val));
             const targetAttributes = TemplateOperators.interpolateVariableIf(val, this.propertyTree);
-            this.TEMPLATEDATACONTEXT.target = Object.assign({}, (this.TEMPLATEDATACONTEXT.target || {}), targetAttributes);
+            this.TEMPLATEDATACONTEXT.target = Object.assign(Object.assign({}, (this.TEMPLATEDATACONTEXT.target || {})), targetAttributes);
             const attributes = Object.entries(targetAttributes);
             attributes.forEach(([key, value], index) => {
                 if (key in this.target) {
@@ -708,6 +724,7 @@ export class Template {
 }
 export class ContainerTemplate extends Template {
     constructor(parent, templateContext, methods, tag, componentAttribute, rowIndex = 0, templateContainer = {}, type = 'container') {
+        var _a;
         super(parent, templateContext, methods, tag, componentAttribute, rowIndex, Object.assign({ children: [] }, templateContainer), templateContext.type || type);
         this.CONTAINERTEMPLATEEVENTS = {
             childrenReady: new BehaviorSubject({ status: true, context: undefined }),
@@ -717,11 +734,11 @@ export class ContainerTemplate extends Template {
         this.ROWS = [];
         this.appendChild = (child, methods = {}) => {
             this.ROWS[this.children.length] = child;
-            return TemplateOperators.createTemplate(this, child, Object.assign({}, this.METHODS, methods), this.COMPONENTATTRIBUTE, this.children.length);
+            return TemplateOperators.createTemplate(this, child, Object.assign(Object.assign({}, this.METHODS), methods), this.COMPONENTATTRIBUTE, this.children.length);
         };
         this.destroyChildren = (children) => new Promise(resolve => {
             children === undefined && (children = this.children);
-            if (!this.ISDESTROYED && children && children.length > 0) {
+            if (!this.ISDESTROYED && (children === null || children === void 0 ? void 0 : children.length) > 0) {
                 const progress = Array.from({ length: children.length }, () => false);
                 children.forEach((item, index) => __awaiter(this, void 0, void 0, function* () {
                     yield item.destroy();
@@ -741,7 +758,7 @@ export class ContainerTemplate extends Template {
                 resolve();
             }
         });
-        if (templateContext.node && templateContext.node.element instanceof HTMLElement) {
+        if (((_a = templateContext.node) === null || _a === void 0 ? void 0 : _a.element) instanceof HTMLElement) {
             const rowList = [];
             Array.from(templateContext.node.element.children || []).forEach((node, idx) => {
                 const attributes = Array.from(node.attributes).reduce((attr, { name, value }) => (attr[name] = value, attr), {});
@@ -770,7 +787,7 @@ export class ContainerTemplate extends Template {
     get propertyTree() {
         const properties = super.propertyTree;
         if (this.children.length > 0) {
-            properties.getChildrenTree = () => this.childrenTree.reduce((prop, child) => (Object.assign({}, prop, { [child.id]: child.propertyTree })), {});
+            properties.getChildrenTree = () => this.childrenTree.reduce((prop, child) => (Object.assign(Object.assign({}, prop), { [child.id]: child.propertyTree })), {});
             properties.getChildren = () => this.children.map(child => child.propertyTree);
         }
         else {
@@ -794,13 +811,13 @@ export class ContainerTemplate extends Template {
         }
     }
     // GETTERS
-    get events() { return !this.ISDESTROYED ? Object.assign({}, super.events, this.CONTAINERTEMPLATEEVENTS) : undefined; }
+    get events() { return !this.ISDESTROYED ? Object.assign(Object.assign({}, super.events), this.CONTAINERTEMPLATEEVENTS) : undefined; }
     get rows() { return !this.ISDESTROYED ? this.ROWS : undefined; }
     set rows(val) {
         if (!this.ISDESTROYED && Array.isArray(val)) {
             (() => __awaiter(this, void 0, void 0, function* () {
                 const currentEvent = this.events.childrenReady.value;
-                currentEvent.status === false && (yield new Promise(resolve => this.events.childrenReady.pipe(first((event) => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve())));
+                currentEvent.status === false && (yield new Promise(resolve => this.events.childrenReady.pipe(first(event => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve())));
                 this.events.childrenReady.next({ status: false, context: val });
                 this.saveContext('rows', val, val);
                 this.ROWS = val;
@@ -808,8 +825,9 @@ export class ContainerTemplate extends Template {
                 const progress = Array.from({ length: val.length }, () => false);
                 progress.length === 0 && this.events.childrenReady.next({ status: true, context: val });
                 val.forEach((row, idx) => __awaiter(this, void 0, void 0, function* () {
+                    var _a;
                     const child = TemplateOperators.createTemplate(this, row, this.METHODS, this.COMPONENTATTRIBUTE, idx);
-                    child instanceof ContainerTemplate && child.rows && child.rows.length > 0 && (yield new Promise(resolve => child.events.childrenReady.pipe(first((event) => event.status === true)).subscribe(() => resolve())));
+                    child instanceof ContainerTemplate && ((_a = child.rows) === null || _a === void 0 ? void 0 : _a.length) > 0 && (yield new Promise(resolve => child.events.childrenReady.pipe(first(event => event.status === true)).subscribe(() => resolve())));
                     progress[idx] = true;
                     progress.every(status => status === true) && this.events.childrenReady.next({ status: true, context: val });
                 }));
@@ -836,9 +854,6 @@ export class ContainerTemplate extends Template {
     loadTemplate(context, restrict = []) {
         if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
             super.loadTemplate(context, restrict);
-            if ('rows' in context && (!restrict.includes('rows'))) {
-                this.rows = context.rows;
-            }
         }
     }
     /**
@@ -913,7 +928,7 @@ export class IterableTemplate extends ContainerTemplate {
     /** Retorna la plantilla del controlador */
     get controller() { return !this.ISDESTROYED && this.TEMPLATECONTAINER ? this.TEMPLATECONTAINER.controller : undefined; }
     // GETTERS
-    get events() { return !this.ISDESTROYED ? Object.assign({}, super.events, this.ITERABLETEMPLATEEVENTS) : undefined; }
+    get events() { return !this.ISDESTROYED ? Object.assign(Object.assign({}, super.events), this.ITERABLETEMPLATEEVENTS) : undefined; }
     // GETTERS AND SETTERS
     get dataContext() { return !this.ISDESTROYED ? super.dataContext : undefined; }
     set dataContext(val) {
@@ -941,7 +956,7 @@ export class IterableTemplate extends ContainerTemplate {
         if (!this.ISDESTROYED && Array.isArray(val)) {
             (() => __awaiter(this, void 0, void 0, function* () {
                 const currentEvent = this.events.childrenReady.value;
-                currentEvent.status === false && (yield new Promise(resolve => this.events.childrenReady.pipe(first((event) => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve())));
+                currentEvent.status === false && (yield new Promise(resolve => this.events.childrenReady.pipe(first(event => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve())));
                 this.events.childrenReady.next({ status: false, context: val });
                 this.saveContext('rows', val, val);
                 this.ROWS = val;
@@ -971,7 +986,7 @@ export class IterableTemplate extends ContainerTemplate {
      */
     push(context, replace = false, index) {
         index === undefined && (index = this.children.length - 1);
-        const template = context instanceof Template ? Object.assign({}, context.templateContext, { node: {
+        const template = context instanceof Template ? Object.assign(Object.assign({}, context.templateContext), { node: {
                 element: context.target,
                 removable: 'node' in context.templateContext ? ('removable' in context.templateContext.node ? context.templateContext.node.removable : true) : true
             } }) : context;
@@ -1004,13 +1019,6 @@ export class IterableTemplate extends ContainerTemplate {
     loadTemplate(context, restrict = []) {
         if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
             super.loadTemplate(context, restrict);
-            if ('childrenShown' in context && (!restrict.includes('childrenShown'))) {
-                this.childrenShown = context.childrenShown;
-            }
-            if ('controller' in context) {
-                this.saveContext('controller', context.controller, context.controller);
-                this.controller && this.controller.loadTemplate(context.controller, []);
-            }
             const properties = ['childrenLength'];
             properties.forEach(item => item in context && !restrict.includes(item) && (this[item] = context[item]));
         }
@@ -1035,7 +1043,8 @@ export class IterableTemplate extends ContainerTemplate {
             this.CHILDRENSHOWN = childrenShown < (this.ROWS.length / this.CHILDRENLENGTH) ? childrenShown : 0;
             this.TEMPLATEDATACONTEXT.childrenShown = this.CHILDRENSHOWN;
             (() => __awaiter(this, void 0, void 0, function* () {
-                this.children && this.children.length > 0 && (yield this.destroyChildren());
+                var _a;
+                ((_a = this.children) === null || _a === void 0 ? void 0 : _a.length) > 0 && (yield this.destroyChildren());
                 if (!this.ISDESTROYED) {
                     const startAt = !this.ISDESTROYED ? (this.CHILDRENSHOWN * this.CHILDRENLENGTH) : undefined;
                     const nextChildren = !this.ISDESTROYED ? this.ROWS.slice(startAt, startAt + this.CHILDRENLENGTH) : [];
@@ -1068,15 +1077,6 @@ export class IterableTemplate extends ContainerTemplate {
     }
 }
 export class ElementTemplate extends Template {
-    constructor(parent, templateContext, methods, tag, componentAttribute, rowIndex = 0) {
-        super(parent, templateContext, methods, tag, componentAttribute, rowIndex, {}, 'element');
-        const restrictions = [];
-        parent instanceof IterableTemplate && restrictions.push('duration');
-        if (templateContext.type === 'element') {
-            this.loadTemplate(templateContext, restrictions);
-            this.events.ready.next({ template: this, type: 'element' });
-        }
-    }
     get text() { return !this.ISDESTROYED && this.target ? this.target.innerHTML : undefined; }
     set text(val) {
         if (!this.ISDESTROYED && this.target) {
@@ -1085,12 +1085,13 @@ export class ElementTemplate extends Template {
             this.TEMPLATEDATACONTEXT.text = this.target.innerHTML;
         }
     }
-    loadTemplate(context, restrict = []) {
-        if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
-            super.loadTemplate(context, restrict);
-            if ('text' in context && this.target && this instanceof ElementTemplate) {
-                this.text = context.text;
-            }
+    constructor(parent, templateContext, methods, tag, componentAttribute, rowIndex = 0) {
+        super(parent, templateContext, methods, tag, componentAttribute, rowIndex, {}, 'element');
+        const restrictions = [];
+        parent instanceof IterableTemplate && restrictions.push('duration');
+        if (templateContext.type === 'element') {
+            this.loadTemplate(templateContext, restrictions);
+            this.events.ready.next({ template: this, type: 'element' });
         }
     }
     destroy() { return super.destroy(); }
@@ -1145,7 +1146,7 @@ class IterableControllerBehavior {
                         }
                     }
                     else {
-                        this.template.root.branch.pipe(first((branch) => branch.id === this.options.target)).subscribe({
+                        this.template.root.branch.pipe(first(branch => branch.id === this.options.target)).subscribe({
                             next: (branch) => {
                                 controlParent = branch;
                                 if (controlParent instanceof IterableTemplate && 'childrenShown' in this.options && controlParent.childrenShown === this.options.childrenShown && 'templateContextActive' in this.options) {
@@ -1216,7 +1217,7 @@ class IterableTimerControllerBehavior {
                                 startAt: new Date().getTime(),
                             };
                         });
-                        TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach((item) => {
+                        TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach(item => {
                             if ('options' in item.behaviorInstances.timerController && 'templateContextActive' in item.behaviorInstances.timerController.options) {
                                 item.loadTemplate(item.behaviorInstances.timerController.options.templateContextActive, []);
                             }
@@ -1226,7 +1227,7 @@ class IterableTimerControllerBehavior {
                         clearTimeout(parent.childrenShownChanger.timer);
                         TemplateOperators.getControllers(this.template.root.tree, parent, 'timerViewer').forEach(item => clearTimeout(item.behaviorInstances.timerViewer.timerChanger.timer));
                         parent.childrenShownChanger.pausedAt = new Date().getTime();
-                        TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach((item) => {
+                        TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach(item => {
                             if ('options' in item.behaviorInstances.timerController && 'templateContextInactive' in item.behaviorInstances.timerController.options) {
                                 item.loadTemplate(item.behaviorInstances.timerController.options.templateContextInactive, []);
                             }
@@ -1351,11 +1352,11 @@ class IterableListPreviewBehavior {
                 }
                 const appenChild = (item, i) => {
                     if (!this.isDestroyed) {
-                        const context = Object.assign({}, templateContext, (i === parent.childrenShown ? (templateContextActive || templateContextInactive) : templateContextInactive));
+                        const context = Object.assign(Object.assign({}, templateContext), (i === parent.childrenShown ? (templateContextActive || templateContextInactive) : templateContextInactive));
                         if ('changeIterableElement' in template.methods) {
                             console.warn('method "changeIterableElement" has been used, rename this');
                         }
-                        const child = template.appendChild(Object.assign({}, context, { addEvents: [['click', { name: 'changeIterableElement' }]] }), {
+                        const child = template.appendChild(Object.assign(Object.assign({}, context), { addEvents: [['click', { name: 'changeIterableElement' }]] }), {
                             changeIterableElement: (event) => {
                                 const index = event.templateEvent.target.parent.children.indexOf(event.templateEvent.target);
                                 index >= 0 ? parent.childrenShown = index : null;
@@ -1377,7 +1378,7 @@ class IterableListPreviewBehavior {
             }
         }
         else {
-            !this.isDestroyed && this.template.root.branch.pipe(first((branch) => branch.id === this.options.target)).subscribe(() => this.init());
+            !this.isDestroyed && this.template.root.branch.pipe(first(branch => branch.id === this.options.target)).subscribe(() => this.init());
         }
     }
 }

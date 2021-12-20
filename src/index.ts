@@ -132,13 +132,13 @@ export class TemplateOperators {
   ): T {
     switch (templateContext.type) {
       case 'container':
-        return new ContainerTemplate(parent, templateContext as any, methods, templateContext ? templateContext.tag : undefined, componentAttribute, rowIndex, {}, 'container') as T;
+        return new ContainerTemplate(parent, templateContext as any, methods, templateContext?.tag, componentAttribute, rowIndex, {}, 'container') as T;
       case 'iterable':
         return new IterableTemplate(parent, templateContext as any, methods, templateContext.tag, componentAttribute, rowIndex) as T;
       case 'element':
         return new ElementTemplate(parent, templateContext as any, methods, templateContext.tag, componentAttribute, rowIndex) as T;
       default:
-        return new Template(parent, templateContext, methods, templateContext ? templateContext.tag : undefined, componentAttribute, rowIndex, {}, 'template') as T;
+        return new Template(parent, templateContext, methods, templateContext?.tag, componentAttribute, rowIndex, {}, 'template') as T;
     }
   }
 
@@ -156,7 +156,6 @@ export class TemplateOperators {
 
 }
 
-
 // TemplateTree
 
 class TemplateTree {
@@ -168,7 +167,7 @@ class TemplateTree {
   private BRANCH: Subject<IntersectionTypeList['template']> = new Subject();
 
   add(branch: IntersectionTypeList['template']): number {
-    branch.events.ready.pipe(first((ref: ReadyEvent) => ref.template instanceof Template)).subscribe({ next: () => this.BRANCH.next(branch) });
+    branch.events.ready.pipe(first(ref => ref.template instanceof Template)).subscribe({ next: () => this.BRANCH.next(branch) });
     return this.TREE.push(branch);
   }
 
@@ -184,7 +183,7 @@ export const TemplateOptions = new TemplateTree();
 // Template
 
 export interface TemplateFamily {
-  parent: ContainerTemplate | Element;
+  parent: SomeContainerTemplateTypeList['template'] | Element;
   target: Element;
 }
 
@@ -250,18 +249,18 @@ export interface TemplateProperties extends TemplateFamily {
   readonly isDestroyed: boolean;
   readonly root: TemplateTree;
   readonly rowIndex: number;
+  styles: Readonly<Omit<TemplateContext['styles'], keyof ImportantStyles>>;
   closingStyles: Readonly<TemplateContext['closingStyles']>;
-  duration: Exclude<TemplateContext['duration'], string>;
   dataContext: Readonly<TemplateContext['dataContext']>;
   properties: Readonly<TemplateContext['dataContext']>;
   attributes: Readonly<TemplateContext['attributes']>;
-  styles: Readonly<Partial<CSSStyleDeclaration>>;
+  duration: Exclude<TemplateContext['duration'], string>;
   addClasses: TemplateContext['addClasses'];
   callback: TemplateContext['callback'];
   classes: TemplateContext['classes'];
   name: TemplateContext['name'];
   id: TemplateContext['id'];
-  loadTemplate: (context: Partial<TemplateContext>, restrict: string[]) => void;
+  loadTemplate: (context: Partial<IntersectionTypeList['context']>, restrict: string[]) => void;
   addMethods: (methodName: string, methodFn: (...params: any[]) => any) => void;
   addEvents: (events: [keyof HTMLElementEventMap | string, Callback][]) => void;
   reload: () => IntersectionTypeList['template'];
@@ -500,7 +499,7 @@ export class Template<T extends TemplateProperties = TemplateProperties, RT exte
     'tag' in templateContext && this.saveContext('tag', templateContext.tag, templateContext.tag);
 
     const templateId = `node-${TemplateOptions.add(this)}`;
-    this.TEMPLATECONTAINER.target = (templateContext.node && templateContext.node.element) || document.createElement(tag || 'div');
+    this.TEMPLATECONTAINER.target = templateContext.node?.element || document.createElement(tag || 'div');
     this.TEMPLATECONTAINER.target.id = this.TEMPLATECONTAINER.target.getAttribute('id') || templateContext.id || templateId;
     this.TEMPLATECONTAINER.parent = parent;
     this.saveContext('id', this.TEMPLATECONTAINER.target.id, this.TEMPLATECONTAINER.target.id);
@@ -577,13 +576,13 @@ export class Template<T extends TemplateProperties = TemplateProperties, RT exte
     }
   }
 
-  public loadTemplate(context: Partial<TemplateContext>, restrict: string[] = []) {
+  public loadTemplate(context: Partial<IntersectionTypeList['context']>, restrict: string[] = []) {
     if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
       if ('name' in context) { this.name = context.name; }
       if ('dataContext' in context) { this.dataContext = context.dataContext; }
       if ('parent' in context && this.parent instanceof ContainerTemplate) {
         this.saveContext('parent', context.parent, context.parent);
-        this.parent.loadTemplate(context.parent, ['rows', 'childrenShown', 'callback']);
+        this.parent.loadTemplate(context.parent as unknown, ['rows', 'childrenShown', 'callback']);
       }
       if ('closingStyles' in context) { this.closingStyles = context.closingStyles; }
       if ('styles' in context && this.target) { this.setStyles(context.styles); }
@@ -591,7 +590,14 @@ export class Template<T extends TemplateProperties = TemplateProperties, RT exte
       if ('addClasses' in context && this.target) { this.addClasses = context.addClasses; }
       if ('attributes' in context && this.target) { this.attributes = context.attributes; }
       if ('id' in context && (!restrict.includes('id')) && this.target) { this.id = context.id; }
+      if ('text' in context && this.target && this instanceof ElementTemplate) { this.text = context.text; }
       if ('target' in context && this.target) { this.setTarget(context.target); }
+      if ('rows' in context && (!restrict.includes('rows')) && this instanceof ContainerTemplate) { this.rows = context.rows; }
+      if ('childrenShown' in context && (!restrict.includes('childrenShown')) && this instanceof IterableTemplate) { this.childrenShown = context.childrenShown; }
+      if ('controller' in context && this instanceof IterableTemplate) {
+        this.saveContext('controller', context.controller, context.controller);
+        this.controller && this.controller.loadTemplate(context.controller as unknown, []);
+      }
       if ('duration' in context && (!restrict.includes('duration'))) { this.setDuration(context.duration); }
       if ('callback' in context && (!restrict.includes('callback'))) { this.callback = context.callback; }
       if ('addEvents' in context) { this.addEvents(context.addEvents); }
@@ -646,9 +652,9 @@ export class Template<T extends TemplateProperties = TemplateProperties, RT exte
               if (!this.ISDESTROYED) {
                 this instanceof ContainerTemplate && await this.destroyChildren();
                 if (!this.ISDESTROYED) {
-                  if (this.TEMPLATECONTEXT.node && this.TEMPLATECONTEXT.node.element === this.target) {
-                    this.TEMPLATECONTEXT.node.removable === true && this.target && this.target.remove();
-                  } else { this.target && this.target.remove(); }
+                  if (this.TEMPLATECONTEXT.node?.element === this.target) {
+                    this.TEMPLATECONTEXT.node.removable === true && this.target?.remove();
+                  } else { this.target?.remove(); }
                   this.ROOT.remove(this);
                   TemplateOptions.remove(this);
                   Object.keys(this).forEach(key => key !== 'ISDESTROYED' ? delete this[key] : null);
@@ -830,7 +836,6 @@ export interface ContainerTemplateProperties extends TemplateProperties {
   push: <T extends IntersectionTypeList['template']>(template: T | T['templateContext'], replace?: boolean, index?: number) => T;
   appendChild: <T extends IntersectionTypeList['template']>(child: T['templateContext'], methods?: T['methods']) => T;
   childrenContextTree: (rowList: ContainerTemplateProperties['rows']) => ContainerTemplateProperties['rows'];
-  loadTemplate: (context: Partial<ContainerTemplateContext>, restrict: string[]) => void;
   destroyChildren: (children: IntersectionTypeList['template'][]) => Promise<void>;
 }
 
@@ -877,7 +882,7 @@ export class ContainerTemplate<P extends ContainerTemplateProperties = Container
     if (!this.ISDESTROYED && Array.isArray(val)) {
       (async () => {
         const currentEvent = this.events.childrenReady.value;
-        currentEvent.status === false && await new Promise<void>(resolve => this.events.childrenReady.pipe(first((event: ChildrenProgressEvent) => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve()));
+        currentEvent.status === false && await new Promise<void>(resolve => this.events.childrenReady.pipe(first(event => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve()));
         this.events.childrenReady.next({ status: false, context: val });
         this.saveContext('rows', val, val);
         this.ROWS = val;
@@ -886,7 +891,7 @@ export class ContainerTemplate<P extends ContainerTemplateProperties = Container
         progress.length === 0 && this.events.childrenReady.next({ status: true, context: val });
         val.forEach(async (row: Partial<IntersectionTypeList['context']>, idx: number) => {
           const child = TemplateOperators.createTemplate(this, row, this.METHODS, this.COMPONENTATTRIBUTE, idx);
-          child instanceof ContainerTemplate && child.rows && child.rows.length > 0 && await new Promise<void>(resolve => child.events.childrenReady.pipe(first((event: ChildrenProgressEvent) => event.status === true)).subscribe(() => resolve()));
+          child instanceof ContainerTemplate && child.rows?.length > 0 && await new Promise<void>(resolve => child.events.childrenReady.pipe(first(event => event.status === true)).subscribe(() => resolve()));
           progress[idx] = true; progress.every(status => status === true) && this.events.childrenReady.next({ status: true, context: val });
         });
       })();
@@ -920,7 +925,7 @@ export class ContainerTemplate<P extends ContainerTemplateProperties = Container
     type: P['type'] = 'container'
   ) {
     super(parent, templateContext, methods, tag, componentAttribute, rowIndex, { children: [], ...templateContainer }, templateContext.type || type);
-    if (templateContext.node && templateContext.node.element instanceof HTMLElement) {
+    if (templateContext.node?.element instanceof HTMLElement) {
       const rowList = [];
       Array.from(templateContext.node.element.children || []).forEach((node, idx) => {
         const attributes = Array.from(node.attributes).reduce((attr, { name, value }) => (attr[name] = value, attr), {});
@@ -949,10 +954,9 @@ export class ContainerTemplate<P extends ContainerTemplateProperties = Container
     return !this.ISDESTROYED ? TemplateOperators.childrenContextTree(rowList) : undefined;
   }
 
-  public loadTemplate(context: Partial<ContainerTemplateContext>, restrict: string[] = []) {
+  public loadTemplate(context: Partial<SomeContainerTemplateTypeList['context']>, restrict: string[] = []) {
     if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
       super.loadTemplate(context, restrict);
-      if ('rows' in context && (!restrict.includes('rows'))) { this.rows = context.rows; }
     }
   }
 
@@ -984,7 +988,7 @@ export class ContainerTemplate<P extends ContainerTemplateProperties = Container
 
   public destroyChildren = (children?: IntersectionTypeList['template'][]): Promise<void> => new Promise<void>(resolve => {
     children === undefined && (children = this.children);
-    if (!this.ISDESTROYED && children && children.length > 0) {
+    if (!this.ISDESTROYED && children?.length > 0) {
       const progress = Array.from({ length: children.length }, () => false);
       children.forEach(async (item, index) => {
         await item.destroy(); progress[index] = true;
@@ -1049,7 +1053,6 @@ export interface IterableTemplateProperties extends ContainerTemplateProperties 
   childrenLength: Exclude<IterableTemplateContext['childrenLength'], string>;
   childrenShown: Exclude<IterableTemplateContext['childrenShown'], string>;
   type: IterableTemplateContext['type'];
-  loadTemplate: (context: Partial<IterableTemplateContext>, restrict: string[]) => void;
 }
 
 export interface IterableTemplateContext extends ContainerTemplateContext {
@@ -1116,7 +1119,7 @@ export class IterableTemplate<P extends IterableTemplateProperties = IterableTem
     if (!this.ISDESTROYED && Array.isArray(val)) {
       (async () => {
         const currentEvent = this.events.childrenReady.value;
-        currentEvent.status === false && await new Promise<void>(resolve => this.events.childrenReady.pipe(first((event: ChildrenProgressEvent) => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve()));
+        currentEvent.status === false && await new Promise<void>(resolve => this.events.childrenReady.pipe(first(event => event.status === true && event.context === currentEvent.context)).subscribe(() => resolve()));
         this.events.childrenReady.next({ status: false, context: val });
         this.saveContext('rows', val, val);
         this.ROWS = val;
@@ -1201,11 +1204,6 @@ export class IterableTemplate<P extends IterableTemplateProperties = IterableTem
   public loadTemplate(context: Partial<IterableTemplateContext>, restrict: string[] = []) {
     if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
       super.loadTemplate(context, restrict);
-      if ('childrenShown' in context && (!restrict.includes('childrenShown'))) { this.childrenShown = context.childrenShown as number; }
-      if ('controller' in context) {
-        this.saveContext('controller', context.controller, context.controller);
-        this.controller && (this.controller as Template).loadTemplate(context.controller, []);
-      }
       type ReadOnlyProperties = 'controller' | 'parent' | 'target' | 'type';
       const properties: Array<Exclude<keyof IterableTemplateContext, ReadOnlyProperties>> = ['childrenLength'];
       properties.forEach(item => item in context && !restrict.includes(item) && (this[item] = context[item]));
@@ -1233,7 +1231,7 @@ export class IterableTemplate<P extends IterableTemplateProperties = IterableTem
       this.CHILDRENSHOWN = childrenShown < (this.ROWS.length / this.CHILDRENLENGTH) ? childrenShown : 0;
       this.TEMPLATEDATACONTEXT.childrenShown = this.CHILDRENSHOWN;
       (async () => {
-        this.children && this.children.length > 0 && await this.destroyChildren();
+        this.children?.length > 0 && await this.destroyChildren();
         if (!this.ISDESTROYED) {
           const startAt = !this.ISDESTROYED ? (this.CHILDRENSHOWN * this.CHILDRENLENGTH) : undefined;
           const nextChildren: Partial<IntersectionTypeList['context']>[] = !this.ISDESTROYED ? this.ROWS.slice(startAt, startAt + this.CHILDRENLENGTH) : [];
@@ -1279,7 +1277,6 @@ export interface ElementTemplateProperties extends TemplateProperties {
   readonly templateContext: Partial<ElementTemplateContext>;
   type: ElementTemplateContext['type'];
   text: ElementTemplateContext['text'];
-  loadTemplate: (context: Partial<ElementTemplateContext>, restrict: string[]) => void;
 }
 
 export interface ElementTemplateContext extends TemplateContext {
@@ -1315,14 +1312,7 @@ export class ElementTemplate<P extends ElementTemplateProperties = ElementTempla
     }
   }
 
-  public loadTemplate(context: Partial<ElementTemplateContext>, restrict: string[] = []) {
-    if (!this.ISDESTROYED && ![null, undefined].includes(context)) {
-      super.loadTemplate(context, restrict);
-      if ('text' in context && this.target && this instanceof ElementTemplate) { this.text = context.text; }
-    }
-  }
-
-  public destroy(): Promise<void> { return super.destroy(); }
+  destroy(): Promise<void> { return super.destroy(); }
 
 }
 
@@ -1353,7 +1343,7 @@ export interface IterableControllerBehaviorOptions {
 }
 
 class IterableControllerBehavior {
-  constructor(public template: Template, public options: IterableControllerBehaviorOptions) { this.init(); }
+  constructor(public template: IntersectionTypeList['template'], public options: IterableControllerBehaviorOptions) { this.init(); }
 
   init() {
     if ('action' in this.options) {
@@ -1385,14 +1375,14 @@ class IterableControllerBehavior {
           let controlParent = getParent();
           if (controlParent instanceof IterableTemplate) {
             if ('childrenShown' in this.options && controlParent.childrenShown === this.options.childrenShown && 'templateContextActive' in this.options) {
-              this.template.loadTemplate(this.options.templateContextActive, []);
+              this.template.loadTemplate(this.options.templateContextActive as unknown, []);
             }
           } else {
-            this.template.root.branch.pipe(first((branch: Template) => branch.id === this.options.target)).subscribe({
+            this.template.root.branch.pipe(first(branch => branch.id === this.options.target)).subscribe({
               next: (branch) => {
                 controlParent = branch;
                 if (controlParent instanceof IterableTemplate && 'childrenShown' in this.options && controlParent.childrenShown === this.options.childrenShown && 'templateContextActive' in this.options) {
-                  this.template.loadTemplate(this.options.templateContextActive, []);
+                  this.template.loadTemplate(this.options.templateContextActive as unknown, []);
                 }
               }
             });
@@ -1418,13 +1408,13 @@ export interface IterableTimerControllerBehaviorOptions {
 }
 
 class IterableTimerControllerBehavior {
-  constructor(public template: Template, public options: IterableTimerControllerBehaviorOptions) { this.init(); }
+  constructor(public template: IntersectionTypeList['template'], public options: IterableTimerControllerBehaviorOptions) { this.init(); }
 
   init() {
     const parent = TemplateOperators.get(this.template.root.tree, this.options.target);
     if (parent instanceof IterableTemplate) {
       if ('templateContextActive' in this.options) {
-        this.template.loadTemplate(this.options.templateContextActive, []);
+        this.template.loadTemplate(this.options.templateContextActive as unknown, []);
       }
       const toggleDuration = (status?: boolean) => {
         if (!this.template.isDestroyed) {
@@ -1463,18 +1453,18 @@ class IterableTimerControllerBehavior {
                 startAt: new Date().getTime(),
               };
             });
-            TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach((item: Template) => {
+            TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach(item => {
               if ('options' in item.behaviorInstances.timerController && 'templateContextActive' in item.behaviorInstances.timerController.options) {
-                item.loadTemplate(item.behaviorInstances.timerController.options.templateContextActive, []);
+                item.loadTemplate(item.behaviorInstances.timerController.options.templateContextActive as unknown, []);
               }
             });
           } else {
             clearTimeout(parent.childrenShownChanger.timer);
             TemplateOperators.getControllers(this.template.root.tree, parent, 'timerViewer').forEach(item => clearTimeout(item.behaviorInstances.timerViewer.timerChanger.timer));
             parent.childrenShownChanger.pausedAt = new Date().getTime();
-            TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach((item: Template) => {
+            TemplateOperators.getControllers(this.template.root.tree, parent, 'timerController').forEach(item => {
               if ('options' in item.behaviorInstances.timerController && 'templateContextInactive' in item.behaviorInstances.timerController.options) {
-                item.loadTemplate(item.behaviorInstances.timerController.options.templateContextInactive, []);
+                item.loadTemplate(item.behaviorInstances.timerController.options.templateContextInactive as unknown, []);
               }
             });
           }
@@ -1592,8 +1582,8 @@ class IterableListPreviewBehavior {
           parent.events.childrenShownChanges.subscribe({
             next: element => {
               if (!template.isDestroyed && template.children.length > 0) {
-                (template.children[element.currentChildrenShownIndex] as Template).loadTemplate(templateContextActive, []);
-                element.currentChildrenShownIndex !== element.lastChildrenShownIndex && (template.children[element.lastChildrenShownIndex] as Template).loadTemplate(templateContextInactive, []);
+                template.children[element.currentChildrenShownIndex].loadTemplate(templateContextActive as unknown, []);
+                element.currentChildrenShownIndex !== element.lastChildrenShownIndex && template.children[element.lastChildrenShownIndex].loadTemplate(templateContextInactive as unknown, []);
               }
             }
           });
@@ -1622,7 +1612,7 @@ class IterableListPreviewBehavior {
           }
         });
       }
-    } else { !this.isDestroyed && this.template.root.branch.pipe(first((branch: Template) => branch.id === this.options.target)).subscribe(() => this.init()); }
+    } else { !this.isDestroyed && this.template.root.branch.pipe(first(branch => branch.id === this.options.target)).subscribe(() => this.init()); }
   }
 
   destroy = (): Promise<void> => new Promise(async resolve => {
