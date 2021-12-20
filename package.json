@@ -1,0 +1,22 @@
+{
+  "name": "htmon-test",
+  "version": "1.0.0",
+  "description": "htmon allows to generate cascading HTML code templates based on a JSON type element",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Andrés F. Ospina A. <aospinadev@gmail.com> (https://github.com/Androspi)",
+  "license": "ISC",
+  "dependencies": {
+    "rxjs": "^7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "~4.0.3"
+  }
+}

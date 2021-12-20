@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "declaration": true,
+    "module": "esnext",
+    "target": "es2015",
+    "outDir": "./dist",
+    "lib": [
+      "es2018",
+      "dom"
+    ]
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules/"
+  ]
+}
