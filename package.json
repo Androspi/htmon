@@ -7,12 +7,16 @@
   "files": [
     "/dist"
   ],
+  "repository": {
+    "url": "https://github.com/Androspi/htmon.git",
+    "type": "git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "Andrés F. Ospina A. <aospinadev@gmail.com> (https://github.com/Androspi)",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "rxjs": "^7.4.0"
   },
